@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { Client } from '@neondatabase/serverless'
+import { createDb, schema } from './db'
 import { renderer } from './renderer'
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
@@ -12,11 +12,10 @@ app.get('/', (c) => {
 
 app.get('/test-db', async (c) => {
   try {
-    const client = new Client(c.env.DATABASE_URL)
-    await client.connect()
+    const db = createDb(c.env.DATABASE_URL)
     
-    const result = await client.query('SELECT 1 as test')
-    await client.end()
+    // Test connection with a simple query
+    const result = await db.execute('SELECT 1 as test')
     
     return c.json({ success: true, result: result.rows[0] })
   } catch (error) {

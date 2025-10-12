@@ -13,6 +13,10 @@ Use **Bun** instead of npm for all operations:
 - `bun add <package>` - Add dependencies
 - `bun install` - Install dependencies
 
+### Database
+- `bun run db:generate` - Generate Drizzle migrations from schema
+- `bun run db:push` - Push schema changes to database
+
 ### Deployment
 - `bun run deploy` - Build and deploy to Cloudflare Workers
 - `bun run cf-typegen` - Generate TypeScript types from Cloudflare Worker configuration
@@ -25,11 +29,15 @@ This is a **Cloudflare Workers application** built with:
 - **JSX/TSX** for rendering with Hono's JSX renderer
 - **vite-ssr-components** for SSR integration
 - **Neon Database** for PostgreSQL with `@neondatabase/serverless`
+- **Drizzle ORM** for type-safe database operations
 
 ### Key Files
 - `src/index.tsx` - Main Hono application with routes
 - `src/renderer.tsx` - JSX renderer setup with HTML layout
 - `src/style.css` - Application styles
+- `src/db/schema.ts` - Drizzle database schema definitions
+- `src/db/index.ts` - Database connection and exports
+- `drizzle.config.ts` - Drizzle Kit configuration
 - `wrangler.jsonc` - Cloudflare Workers configuration
 - `vite.config.ts` - Vite configuration with Cloudflare plugin
 - `.dev.vars` - Local environment variables (not committed)

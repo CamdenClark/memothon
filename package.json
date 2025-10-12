@@ -6,14 +6,18 @@
     "build": "vite build",
     "preview": "$npm_execpath run build && vite preview",
     "deploy": "$npm_execpath run build && wrangler deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.44.6",
     "hono": "^4.9.11"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.2.3",
+    "drizzle-kit": "^0.31.5",
     "vite": "^6.3.5",
     "vite-ssr-components": "^0.5.1",
     "wrangler": "^4.17.0"
