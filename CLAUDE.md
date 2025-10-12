@@ -15,7 +15,11 @@ Use **Bun** instead of npm for all operations:
 
 ### Database
 - `bun run db:generate` - Generate Drizzle migrations from schema
-- `bun run db:push` - Push schema changes to database
+- `bun run db:push` - Push schema changes to database (uses dotenvx to load .dev.vars)
+
+### Authentication
+- `bunx cli generate` - Generate better-auth schema (requires auth config in src/auth.ts)
+- `bunx cli secret` - Generate a new BETTER_AUTH_SECRET
 
 ### Deployment
 - `bun run deploy` - Build and deploy to Cloudflare Workers
@@ -30,12 +34,15 @@ This is a **Cloudflare Workers application** built with:
 - **vite-ssr-components** for SSR integration
 - **Neon Database** for PostgreSQL with `@neondatabase/serverless`
 - **Drizzle ORM** for type-safe database operations
+- **Better Auth** for authentication with email/password
 
 ### Key Files
-- `src/index.tsx` - Main Hono application with routes
+- `src/index.tsx` - Main Hono application with routes and auth integration
 - `src/renderer.tsx` - JSX renderer setup with HTML layout
 - `src/style.css` - Application styles
-- `src/db/schema.ts` - Drizzle database schema definitions
+- `src/auth.ts` - Better Auth configuration
+- `src/db/schema.ts` - Drizzle database schema definitions (includes auth tables)
+- `src/db/auth-schema.ts` - Better Auth generated schema
 - `src/db/index.ts` - Database connection and exports
 - `drizzle.config.ts` - Drizzle Kit configuration
 - `wrangler.jsonc` - Cloudflare Workers configuration
@@ -44,6 +51,27 @@ This is a **Cloudflare Workers application** built with:
 
 ### Application Structure
 The app uses Hono's JSX renderer for server-side rendering. Routes are defined in `src/index.tsx` and use the renderer middleware from `src/renderer.tsx`. The renderer provides the base HTML structure with Vite client integration for development.
+
+### Authentication System
+Better Auth is integrated with Hono providing:
+- **Auth routes** mounted at `/api/auth/*` (sign-up, sign-in, session, etc.)
+- **Session middleware** that sets `user` and `session` context variables
+- **Database schema** auto-generated using `bunx cli generate`
+- **Email/password** authentication enabled
+
+Access user/session in routes:
+```tsx
+app.get('/protected', (c) => {
+  const user = c.get('user')
+  const session = c.get('session')
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  return c.json({ message: `Hello ${user.name}` })
+})
+```
+
+Required environment variables in `.dev.vars`:
+- `BETTER_AUTH_SECRET` - Generate with `bunx cli secret`
+- `BETTER_AUTH_URL` - Base URL (e.g., http://localhost:5173)
 
 ### TypeScript Configuration
 - Uses Hono's JSX with `jsxImportSource: "hono/jsx"`
