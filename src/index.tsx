@@ -3,6 +3,9 @@ import { createDb, schema } from './db'
 import { renderer } from './renderer'
 import { createAuth } from './auth'
 import type { Auth } from './auth'
+import { HomePage } from './pages/HomePage'
+import { SignInPage } from './pages/SignInPage'
+import { SignUpPage } from './pages/SignUpPage'
 
 type Variables = {
   auth: Auth
@@ -51,7 +54,64 @@ app.use('*', async (c, next) => {
 })
 
 app.get('/', (c) => {
-  return c.render(<h1>Hello!</h1>)
+  const user = c.get('user')
+  return c.render(<HomePage user={user} />)
+})
+
+app.get('/signin', (c) => {
+  return c.render(<SignInPage />)
+})
+
+app.get('/signup', (c) => {
+  return c.render(<SignUpPage />)
+})
+
+app.post('/signup', async (c) => {
+  const formData = await c.req.formData()
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  
+  const auth = c.get('auth')
+  
+  try {
+    await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name: email, // Use email as name
+      }
+    })
+    
+    return c.redirect('/')
+  } catch (error) {
+    // Handle signup error - for now just redirect back with error
+    return c.redirect('/signup?error=signup_failed')
+  }
+})
+
+app.post('/signin', async (c) => {
+  const formData = await c.req.formData()
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  
+  const auth = c.get('auth')
+  
+  try {
+    const result = await auth.api.signInEmail({
+      body: {
+        email,
+        password,
+      }
+    })
+    
+    if (result.success) {
+      return c.redirect('/')
+    } else {
+      return c.redirect('/signin?error=invalid_credentials')
+    }
+  } catch (error) {
+    return c.redirect('/signin?error=signin_failed')
+  }
 })
 
 app.get('/session', (c) => {
