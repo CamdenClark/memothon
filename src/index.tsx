@@ -70,48 +70,67 @@ app.post('/signup', async (c) => {
   const formData = await c.req.formData()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  
+  const name = formData.get('name') as string || email
+
+  // Forward to better-auth's handler
+  const authRequest = new Request(`${c.env.BETTER_AUTH_URL}/api/auth/sign-up/email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password, name }),
+  })
+
   const auth = c.get('auth')
-  
-  try {
-    await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name: email, // Use email as name
-      }
-    })
-    
-    return c.redirect('/')
-  } catch (error) {
-    // Handle signup error - for now just redirect back with error
-    return c.redirect('/signup?error=signup_failed')
+  const authResponse = await auth.handler(authRequest)
+
+  // If successful, set cookies and redirect
+  if (authResponse.ok) {
+    const setCookieHeaders = authResponse.headers.getSetCookie()
+    const response = c.redirect('/')
+
+    for (const cookieHeader of setCookieHeaders) {
+      response.headers.append('Set-Cookie', cookieHeader)
+    }
+
+    return response
   }
+
+  // On error, redirect back to signup with error
+  return c.redirect('/signup?error=signup_failed')
 })
 
 app.post('/signin', async (c) => {
   const formData = await c.req.formData()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  
+
+  // Forward to better-auth's handler
+  const authRequest = new Request(`${c.env.BETTER_AUTH_URL}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  })
+
   const auth = c.get('auth')
-  
-  try {
-    const result = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-      }
-    })
-    
-    if (result.success) {
-      return c.redirect('/')
-    } else {
-      return c.redirect('/signin?error=invalid_credentials')
+  const authResponse = await auth.handler(authRequest)
+
+  // If successful, set cookies and redirect
+  if (authResponse.ok) {
+    const setCookieHeaders = authResponse.headers.getSetCookie()
+    const response = c.redirect('/')
+
+    for (const cookieHeader of setCookieHeaders) {
+      response.headers.append('Set-Cookie', cookieHeader)
     }
-  } catch (error) {
-    return c.redirect('/signin?error=signin_failed')
+
+    return response
   }
+
+  // On error, redirect back to signin with error
+  return c.redirect('/signin?error=signin_failed')
 })
 
 app.get('/session', (c) => {

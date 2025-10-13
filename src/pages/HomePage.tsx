@@ -10,10 +10,30 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
     <Layout user={user}>
       {user ? (
         <div class="px-4 py-6 sm:px-0">
-          <div class="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <div class="text-center">
+          <div class="border-4 border-dashed border-gray-200 rounded-lg p-8">
+            <div class="text-center mb-8">
+              <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                ✓ Successfully logged in!
+              </div>
               <h1 class="text-3xl font-bold text-gray-900 mb-4">Welcome back, {user.email}!</h1>
-              <p class="text-gray-600">Your memory palace awaits.</p>
+              <p class="text-gray-600 mb-6">Your memory palace awaits.</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-6">
+              <h2 class="text-xl font-semibold text-gray-900 mb-4">Session Info</h2>
+              <div class="space-y-2 text-left">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">User ID:</span>
+                  <span class="text-gray-900 font-mono text-sm">{user.id}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Email:</span>
+                  <span class="text-gray-900">{user.email}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Name:</span>
+                  <span class="text-gray-900">{user.name}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
