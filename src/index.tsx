@@ -133,6 +133,27 @@ app.post('/signin', async (c) => {
   return c.redirect('/signin?error=signin_failed')
 })
 
+app.post('/signout', async (c) => {
+  // Forward to better-auth's sign-out handler
+  const authRequest = new Request(`${c.env.BETTER_AUTH_URL}/api/auth/sign-out`, {
+    method: 'POST',
+    headers: c.req.raw.headers,
+  })
+
+  const auth = c.get('auth')
+  const authResponse = await auth.handler(authRequest)
+
+  // Set cookies from auth response and redirect
+  const setCookieHeaders = authResponse.headers.getSetCookie()
+  const response = c.redirect('/')
+
+  for (const cookieHeader of setCookieHeaders) {
+    response.headers.append('Set-Cookie', cookieHeader)
+  }
+
+  return response
+})
+
 app.get('/session', (c) => {
   const session = c.get('session')
   const user = c.get('user')

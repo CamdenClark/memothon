@@ -21,7 +21,7 @@ export const Layout: FC<LayoutProps> = ({ title = 'Memothon', user, children }) 
               {user ? (
                 <div class="flex items-center space-x-4">
                   <span class="text-gray-700">Hello, {user.email}</span>
-                  <form method="post" action="/api/auth/sign-out" class="inline">
+                  <form method="post" action="/signout" class="inline">
                     <button type="submit" class="text-red-600 hover:text-red-800">
                       Sign Out
                     </button>
