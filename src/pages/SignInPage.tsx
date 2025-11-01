@@ -1,5 +1,5 @@
-import type { FC } from 'hono/jsx'
-import { Layout } from '../components/Layout'
+import type { FC } from "hono/jsx";
+import { Layout } from "../components/Layout";
 
 export const SignInPage: FC = () => {
   return (
@@ -11,8 +11,11 @@ export const SignInPage: FC = () => {
               Sign in to your account
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
-              Or{' '}
-              <a href="/signup" class="font-medium text-blue-600 hover:text-blue-500">
+              Or{" "}
+              <a
+                href="/signup"
+                class="font-medium text-blue-600 hover:text-blue-500"
+              >
                 create a new account
               </a>
             </p>
@@ -61,5 +64,5 @@ export const SignInPage: FC = () => {
         </div>
       </div>
     </Layout>
-  )
-}
+  );
+};

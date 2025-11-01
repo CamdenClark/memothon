@@ -1,14 +1,14 @@
-import { betterAuth } from "better-auth"
-import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { createDb } from "./db"
-import * as schema from "./db/schema"
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createDb } from "./db";
+import * as schema from "./db/schema";
 
 export function createAuth(env: {
-  DATABASE_URL: string
-  BETTER_AUTH_SECRET: string
-  BETTER_AUTH_URL: string
+  DATABASE_URL: string;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
 }) {
-  const db = createDb(env.DATABASE_URL)
+  const db = createDb(env.DATABASE_URL);
 
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -36,7 +36,7 @@ export function createAuth(env: {
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
-  })
+  });
 }
 
-export type Auth = ReturnType<typeof createAuth>
+export type Auth = ReturnType<typeof createAuth>;
