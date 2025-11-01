@@ -10,8 +10,8 @@ import openrouter from './routes/openrouter'
 
 type Variables = {
   auth: Auth
-  user: any | null
-  session: any | null
+  user: Auth['$Infer']['Session']['user'] | null
+  session: Auth['$Infer']['Session']['session'] | null
 }
 
 const app = new Hono<{ 
