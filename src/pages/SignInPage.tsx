@@ -20,7 +20,7 @@ export const SignInPage: FC = () => {
               </a>
             </p>
           </div>
-          <form class="mt-8 space-y-6" action="/signin" method="POST">
+          <form class="mt-8 space-y-6" action="/signin" method="post">
             <div class="rounded-md shadow-sm -space-y-px">
               <div>
                 <label for="email-address" class="sr-only">

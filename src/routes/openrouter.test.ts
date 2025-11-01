@@ -4,6 +4,15 @@ import openrouter from "./openrouter";
 import * as oauth from "../lib/oauth";
 import * as db from "../db";
 import { setCookie, getCookie } from "hono/cookie";
+import type { Auth } from "../auth";
+
+type Variables = {
+  auth: Auth;
+  user: Auth["$Infer"]["Session"]["user"] | null;
+  session: Auth["$Infer"]["Session"]["session"] | null;
+};
+
+type MockUser = Auth["$Infer"]["Session"]["user"];
 
 // Mock dependencies
 vi.mock("../lib/oauth");
@@ -14,13 +23,28 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 describe("OpenRouter OAuth Routes", () => {
-  let app: Hono;
+  let app: Hono<{ Variables: Variables }>;
+
+  // Helper function to create a mock user
+  const createMockUser = (
+    id = "user-123",
+    email = "test@example.com"
+  ): MockUser => ({
+    id,
+    email,
+    name: "Test User",
+    emailVerified: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    image: null,
+    openrouterApiKey: null,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Create a test app with the openrouter routes
-    app = new Hono();
+    app = new Hono<{ Variables: Variables }>();
 
     // Add middleware to simulate authentication
     app.use("*", async (c, next) => {
@@ -52,9 +76,9 @@ describe("OpenRouter OAuth Routes", () => {
       vi.mocked(oauth.generateCodeChallenge).mockResolvedValue(mockChallenge);
 
       // Create app with authenticated user
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: "user-123", email: "test@example.com" });
+        c.set("user", createMockUser());
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);
@@ -115,9 +139,9 @@ describe("OpenRouter OAuth Routes", () => {
     });
 
     it("should redirect when code parameter is missing", async () => {
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: "user-123", email: "test@example.com" });
+        c.set("user", createMockUser());
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);
@@ -131,9 +155,9 @@ describe("OpenRouter OAuth Routes", () => {
     it("should redirect when verifier cookie is missing", async () => {
       vi.mocked(getCookie).mockReturnValue(undefined);
 
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: "user-123", email: "test@example.com" });
+        c.set("user", createMockUser());
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);
@@ -154,9 +178,9 @@ describe("OpenRouter OAuth Routes", () => {
         text: () => Promise.resolve('{"error":"invalid_code"}'),
       });
 
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: "user-123", email: "test@example.com" });
+        c.set("user", createMockUser());
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);
@@ -194,9 +218,9 @@ describe("OpenRouter OAuth Routes", () => {
 
       vi.mocked(db.createDb).mockReturnValue(mockDb as any);
 
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: mockUserId, email: "test@example.com" });
+        c.set("user", createMockUser(mockUserId));
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);
@@ -251,9 +275,9 @@ describe("OpenRouter OAuth Routes", () => {
 
       global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
-      const authApp = new Hono();
+      const authApp = new Hono<{ Variables: Variables }>();
       authApp.use("*", async (c, next) => {
-        c.set("user", { id: "user-123", email: "test@example.com" });
+        c.set("user", createMockUser());
         await next();
       });
       authApp.route("/oauth/openrouter", openrouter);

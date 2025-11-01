@@ -87,7 +87,7 @@ openrouter.get("/callback", async (c) => {
       return c.redirect("/?error=key_exchange_failed");
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { key: string };
     const apiKey = data.key;
 
     // Store the API key in the user's record

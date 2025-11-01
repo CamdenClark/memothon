@@ -180,7 +180,13 @@ app.get("/test-db", async (c) => {
 
     return c.json({ success: true, result: result.rows[0] });
   } catch (error) {
-    return c.json({ success: false, error: error.message }, 500);
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 
