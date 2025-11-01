@@ -11,6 +11,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  openrouterApiKey: text("openrouter_api_key"),
 });
 
 export const session = pgTable("session", {
