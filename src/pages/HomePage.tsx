@@ -39,7 +39,7 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
                 </div>
               </div>
             </div>
-            <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+            <div class="bg-white border-2 border-gray-200 rounded-lg p-6 mb-6">
               <h2 class="text-xl font-semibold text-gray-900 mb-4">
                 OpenRouter Integration
               </h2>
@@ -97,6 +97,45 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
                 </div>
               )}
             </div>
+            {user.openrouterApiKey && (
+              <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                  Topic Explainer
+                </h2>
+                <p class="text-gray-600 text-sm mb-4">
+                  Enter any topic and get a detailed explanation powered by
+                  Claude.
+                </p>
+                <form
+                  action="/generate-explanation"
+                  method="post"
+                  class="space-y-4"
+                >
+                  <div>
+                    <label
+                      for="topic"
+                      class="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      What would you like to learn about?
+                    </label>
+                    <input
+                      type="text"
+                      id="topic"
+                      name="topic"
+                      required
+                      placeholder="e.g., The Byzantine Generals Problem"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
+                  >
+                    Generate Explanation
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       ) : (
