@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Script to create a worktree and copy over .dev.vars
+
+# Check if branch name is provided
+if [ -z "$1" ]; then
+  echo "Usage: cwt <branch-name>"
+  exit 1
+fi
+
+BRANCH_NAME="$1"
+CURRENT_DIR=$(pwd)
+PARENT_DIR=$(dirname "$CURRENT_DIR")
+NEW_WORKTREE="$PARENT_DIR/memothon-$BRANCH_NAME"
+
+# Check if .dev.vars exists
+if [ ! -f "$CURRENT_DIR/.dev.vars" ]; then
+  echo "Warning: .dev.vars not found in current directory"
+fi
+
+# Create the worktree
+echo "Creating worktree at $NEW_WORKTREE..."
+git worktree add "$NEW_WORKTREE" -b "$BRANCH_NAME"
+
+if [ $? -ne 0 ]; then
+  echo "Failed to create worktree"
+  exit 1
+fi
+
+# Copy .dev.vars if it exists
+if [ -f "$CURRENT_DIR/.dev.vars" ]; then
+  echo "Copying .dev.vars to new worktree..."
+  cp "$CURRENT_DIR/.dev.vars" "$NEW_WORKTREE/.dev.vars"
+fi
+
+# Change to the new directory and spawn a new shell
+echo "Opening new shell in $NEW_WORKTREE..."
+cd "$NEW_WORKTREE" && exec $SHELL
