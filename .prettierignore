@@ -1,0 +1,5 @@
+# Generated files
+worker-configuration.d.ts
+
+# Drizzle migrations and metadata
+drizzle/
