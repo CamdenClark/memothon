@@ -58,13 +58,13 @@ openrouter.get("/callback", async (c) => {
   // Get the authorization code from query params
   const code = c.req.query("code");
   if (!code) {
-    return c.redirect("/?error=missing_code");
+    return c.redirect("/settings?error=missing_code");
   }
 
   // Retrieve the code verifier from the cookie
   const codeVerifier = getCookie(c, "openrouter_verifier");
   if (!codeVerifier) {
-    return c.redirect("/?error=missing_verifier");
+    return c.redirect("/settings?error=missing_verifier");
   }
 
   try {
@@ -84,7 +84,7 @@ openrouter.get("/callback", async (c) => {
     if (!response.ok) {
       const error = await response.text();
       console.error("OpenRouter key exchange failed:", error);
-      return c.redirect("/?error=key_exchange_failed");
+      return c.redirect("/settings?error=key_exchange_failed");
     }
 
     const data = (await response.json()) as { key: string };
@@ -103,10 +103,10 @@ openrouter.get("/callback", async (c) => {
       path: "/",
     });
 
-    return c.redirect("/?success=openrouter_connected");
+    return c.redirect("/settings?success=openrouter_connected");
   } catch (error) {
     console.error("Error in OpenRouter callback:", error);
-    return c.redirect("/?error=callback_failed");
+    return c.redirect("/settings?error=callback_failed");
   }
 });
 

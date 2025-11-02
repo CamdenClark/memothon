@@ -6,6 +6,7 @@ import type { Auth } from "./auth";
 import { HomePage } from "./pages/HomePage";
 import { SignInPage } from "./pages/SignInPage";
 import { SignUpPage } from "./pages/SignUpPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ExplanationPage } from "./pages/ExplanationPage";
 import openrouter from "./routes/openrouter";
 import { callOpenRouter } from "./lib/openrouter";
@@ -59,6 +60,11 @@ app.use("*", async (c, next) => {
 app.get("/", (c) => {
   const user = c.get("user");
   return c.render(<HomePage user={user} />);
+});
+
+app.get("/settings", (c) => {
+  const user = c.get("user");
+  return c.render(<SettingsPage user={user} />);
 });
 
 app.get("/signin", (c) => {
