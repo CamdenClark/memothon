@@ -6,6 +6,7 @@ interface ExplanationPageProps {
   topic: string;
   explanation: string;
   error?: string;
+  streaming?: boolean;
 }
 
 export const ExplanationPage: FC<ExplanationPageProps> = ({
@@ -13,6 +14,7 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
   topic,
   explanation,
   error,
+  streaming = false,
 }) => {
   return (
     <Layout user={user} title={`Explanation: ${topic}`}>
@@ -48,16 +50,52 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
           <div class="bg-white border-2 border-gray-200 rounded-lg p-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-6">{topic}</h1>
             <div class="prose prose-lg max-w-none">
-              {explanation.split("\n").map((paragraph, idx) => {
-                if (paragraph.trim()) {
-                  return (
-                    <p key={idx} class="mb-4 text-gray-700 leading-relaxed">
-                      {paragraph}
-                    </p>
-                  );
-                }
-                return null;
-              })}
+              {streaming ? (
+                <>
+                  <div class="mb-4 text-gray-500 italic flex items-center gap-2">
+                    <svg
+                      class="animate-spin h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Generating explanation...
+                  </div>
+                  <div
+                    id="explanation-content"
+                    class="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                    hx-ext="sse"
+                    sse-connect={`/stream-explanation?topic=${encodeURIComponent(topic)}`}
+                    sse-swap="message"
+                    hx-swap="beforeend"
+                  ></div>
+                </>
+              ) : (
+                explanation.split("\n").map((paragraph, idx) => {
+                  if (paragraph.trim()) {
+                    return (
+                      <p key={idx} class="mb-4 text-gray-700 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    );
+                  }
+                  return null;
+                })
+              )}
             </div>
           </div>
         )}

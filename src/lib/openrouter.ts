@@ -47,7 +47,7 @@ export interface OpenRouterError {
 
 export interface User {
   id: string;
-  openrouterApiKey: string | null;
+  openrouterApiKey?: string | null;
   [key: string]: any;
 }
 
