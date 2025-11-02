@@ -260,6 +260,7 @@ app.get("/stream-explanation", async (c) => {
 
   try {
     const { callOpenRouterStream } = await import("./lib/openrouter");
+    const { marked } = await import("marked");
 
     // Get the streaming response from OpenRouter
     const stream = await callOpenRouterStream(user, {
@@ -267,7 +268,7 @@ app.get("/stream-explanation", async (c) => {
       messages: [
         {
           role: "user",
-          content: `Please provide a detailed explanation of the following topic in approximately 5 paragraphs. Make it educational and easy to understand:\n\n${topic}`,
+          content: `Please provide a detailed explanation of the following topic using markdown formatting. Use headings, bold, italics, lists, code blocks, and other markdown features to make it well-structured and easy to read. Provide approximately 5 paragraphs of content:\n\n${topic}`,
         },
       ],
     });
@@ -280,12 +281,13 @@ app.get("/stream-explanation", async (c) => {
       async start(controller) {
         try {
           let buffer = "";
+          let markdownAccumulator = "";
 
           while (true) {
             const { done, value } = await reader.read();
 
             if (done) {
-              // Send final event to close the stream
+              // Send done event to close the stream
               controller.enqueue(
                 new TextEncoder().encode("event: done\ndata: \n\n")
               );
@@ -302,6 +304,7 @@ app.get("/stream-explanation", async (c) => {
                 const data = line.slice(6);
 
                 if (data === "[DONE]") {
+                  // Send done event to close the stream
                   controller.enqueue(
                     new TextEncoder().encode("event: done\ndata: \n\n")
                   );
@@ -314,8 +317,13 @@ app.get("/stream-explanation", async (c) => {
                   const content = parsed.choices?.[0]?.delta?.content;
 
                   if (content) {
-                    // Send content chunk as SSE event
-                    const sseMessage = `data: ${content}\n\n`;
+                    markdownAccumulator += content;
+                    // Parse accumulated markdown to HTML and send the full HTML
+                    const html = await marked.parse(markdownAccumulator);
+                    // For SSE format, split multi-line data with each line prefixed by "data: "
+                    const lines = html.split("\n");
+                    const sseMessage =
+                      lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
                     controller.enqueue(new TextEncoder().encode(sseMessage));
                   }
                 } catch (e) {

@@ -51,7 +51,14 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
             <h1 class="text-3xl font-bold text-gray-900 mb-6">{topic}</h1>
             <div class="prose prose-lg max-w-none">
               {streaming ? (
-                <>
+                <div
+                  id="explanation-content"
+                  hx-ext="sse"
+                  sse-connect={`/stream-explanation?topic=${encodeURIComponent(topic)}`}
+                  sse-swap="message"
+                  sse-close="done"
+                  hx-swap="innerHTML"
+                >
                   <div class="mb-4 text-gray-500 italic flex items-center gap-2">
                     <svg
                       class="animate-spin h-5 w-5"
@@ -75,26 +82,9 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
                     </svg>
                     Generating explanation...
                   </div>
-                  <div
-                    id="explanation-content"
-                    class="text-gray-700 leading-relaxed whitespace-pre-wrap"
-                    hx-ext="sse"
-                    sse-connect={`/stream-explanation?topic=${encodeURIComponent(topic)}`}
-                    sse-swap="message"
-                    hx-swap="beforeend"
-                  ></div>
-                </>
+                </div>
               ) : (
-                explanation.split("\n").map((paragraph, idx) => {
-                  if (paragraph.trim()) {
-                    return (
-                      <p key={idx} class="mb-4 text-gray-700 leading-relaxed">
-                        {paragraph}
-                      </p>
-                    );
-                  }
-                  return null;
-                })
+                <div dangerouslySetInnerHTML={{ __html: explanation }} />
               )}
             </div>
           </div>
