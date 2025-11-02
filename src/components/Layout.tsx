@@ -47,7 +47,11 @@ export const Layout: FC<LayoutProps> = ({
                       action="/signout"
                       style="display: inline;"
                     >
-                      <button type="submit" class="secondary outline">
+                      <button
+                        type="submit"
+                        class="secondary outline"
+                        style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                      >
                         Sign Out
                       </button>
                     </form>
@@ -56,12 +60,21 @@ export const Layout: FC<LayoutProps> = ({
               ) : (
                 <>
                   <li>
-                    <a href="/signin" role="button" class="secondary outline">
+                    <a
+                      href="/signin"
+                      role="button"
+                      class="secondary outline"
+                      style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                    >
                       Sign In
                     </a>
                   </li>
                   <li>
-                    <a href="/signup" role="button">
+                    <a
+                      href="/signup"
+                      role="button"
+                      style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                    >
                       Sign Up
                     </a>
                   </li>
