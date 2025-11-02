@@ -159,6 +159,28 @@ topics.get("/:id/lesson", async (c) => {
     return c.text("Topic is required", 400);
   }
 
+  // If lesson content already exists, return it directly
+  if (topicRecord.lessonContent) {
+    try {
+      const html = await marked.parse(topicRecord.lessonContent);
+      const lines = html.split("\n");
+      const sseMessage =
+        lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
+      const doneMessage = "event: done\ndata: \n\n";
+
+      return new Response(sseMessage + doneMessage, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      });
+    } catch (error) {
+      console.error("Error parsing cached lesson content:", error);
+      // Fall through to regenerate if there's an error
+    }
+  }
+
   try {
     // Get the streaming response from OpenRouter
     const stream = await callOpenRouterStream(user, {
@@ -191,6 +213,18 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
             const { done, value } = await reader.read();
 
             if (done) {
+              // Save the accumulated markdown to the database
+              if (markdownAccumulator.trim()) {
+                try {
+                  await db
+                    .update(schema.topics)
+                    .set({ lessonContent: markdownAccumulator })
+                    .where(eq(schema.topics.id, topicId));
+                } catch (dbError) {
+                  console.error("Error saving lesson content to DB:", dbError);
+                }
+              }
+
               // Send done event to close the stream
               controller.enqueue(
                 new TextEncoder().encode("event: done\ndata: \n\n")
@@ -208,6 +242,21 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
                 const data = line.slice(6);
 
                 if (data === "[DONE]") {
+                  // Save the accumulated markdown to the database
+                  if (markdownAccumulator.trim()) {
+                    try {
+                      await db
+                        .update(schema.topics)
+                        .set({ lessonContent: markdownAccumulator })
+                        .where(eq(schema.topics.id, topicId));
+                    } catch (dbError) {
+                      console.error(
+                        "Error saving lesson content to DB:",
+                        dbError
+                      );
+                    }
+                  }
+
                   // Send done event to close the stream
                   controller.enqueue(
                     new TextEncoder().encode("event: done\ndata: \n\n")
