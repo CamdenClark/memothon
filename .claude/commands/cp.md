@@ -10,4 +10,4 @@ Run the following steps in order:
 4. Commit all changes with an appropriate commit message following the existing commit style
 5. Push the changes to the remote repository
 
-If typecheck fails, stop and report the errors. If format makes changes, include them in the commit.
+If typecheck fails, fix the errors before continuing. If format makes changes, include them in the commit.
