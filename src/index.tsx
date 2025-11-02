@@ -8,6 +8,7 @@ import { SignInPage } from "./pages/SignInPage";
 import { SignUpPage } from "./pages/SignUpPage";
 import { ExplanationPage } from "./pages/ExplanationPage";
 import openrouter from "./routes/openrouter";
+import { callOpenRouter } from "./lib/openrouter";
 
 type Variables = {
   auth: Auth;
@@ -199,10 +200,6 @@ app.post("/generate-explanation", async (c) => {
     return c.redirect("/signin?error=not_authenticated");
   }
 
-  if (!user.openrouterApiKey) {
-    return c.redirect("/?error=no_api_key");
-  }
-
   try {
     const body = await c.req.parseBody();
     const topic = body.topic as string;
@@ -218,49 +215,16 @@ app.post("/generate-explanation", async (c) => {
       );
     }
 
-    // Call OpenRouter API
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${user.openrouterApiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": c.env.BETTER_AUTH_URL || "http://localhost:5173",
-          "X-Title": "Memothon",
+    // Call OpenRouter API using the service
+    const data = await callOpenRouter(user, {
+      model: "anthropic/claude-sonnet-4.5",
+      messages: [
+        {
+          role: "user",
+          content: `Please provide a detailed explanation of the following topic in approximately 5 paragraphs. Make it educational and easy to understand:\n\n${topic}`,
         },
-        body: JSON.stringify({
-          model: "anthropic/claude-sonnet-4.5",
-          messages: [
-            {
-              role: "user",
-              content: `Please provide a detailed explanation of the following topic in approximately 5 paragraphs. Make it educational and easy to understand:\n\n${topic}`,
-            },
-          ],
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenRouter API error:", errorText);
-      return c.html(
-        <ExplanationPage
-          user={user}
-          topic={topic}
-          explanation=""
-          error="Failed to generate explanation. Please try again."
-        />
-      );
-    }
-
-    const data = (await response.json()) as {
-      choices: Array<{
-        message: {
-          content: string;
-        };
-      }>;
-    };
+      ],
+    });
 
     const explanation = data.choices[0]?.message?.content || "";
 
@@ -269,10 +233,13 @@ app.post("/generate-explanation", async (c) => {
     );
   } catch (error) {
     console.error("Error generating explanation:", error);
+    const body = await c.req.parseBody();
+    const topic = (body.topic as string) || "";
+
     return c.html(
       <ExplanationPage
         user={c.get("user")}
-        topic=""
+        topic={topic}
         explanation=""
         error={
           error instanceof Error
