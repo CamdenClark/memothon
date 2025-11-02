@@ -38,11 +38,7 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
             <div
               id="explanation-content"
               hx-ext="sse"
-              sse-connect={
-                topicId
-                  ? `/stream-explanation?topicId=${topicId}`
-                  : `/stream-explanation?topic=${encodeURIComponent(topic)}`
-              }
+              sse-connect={`/topics/${topicId}/lesson`}
               sse-swap="message"
               sse-close="done"
               hx-swap="innerHTML"
