@@ -8,6 +8,8 @@ import { SignUpPage } from "./pages/SignUpPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import openrouter from "./routes/openrouter";
 import topics from "./routes/topics";
+// Initialize marked with MCQ extension globally
+import "./lib/marked-config";
 
 type Variables = {
   auth: Auth;

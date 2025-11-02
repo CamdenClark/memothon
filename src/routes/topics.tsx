@@ -5,6 +5,10 @@ import type { Auth } from "../auth";
 import { ExplanationPage } from "../pages/ExplanationPage";
 import { callOpenRouterStream } from "../lib/openrouter";
 import { marked } from "marked";
+import {
+  extractAndSaveQuizItems,
+  renderMarkdownWithQuizItems,
+} from "../lib/quiz-items";
 
 type Variables = {
   auth: Auth;
@@ -162,7 +166,25 @@ topics.get("/:id/lesson", async (c) => {
   // If lesson content already exists, return it directly
   if (topicRecord.lessonContent) {
     try {
-      const html = await marked.parse(topicRecord.lessonContent);
+      // Find the initial lesson for this topic
+      const [lesson] = await db
+        .select()
+        .from(schema.lessons)
+        .where(eq(schema.lessons.topicId, topicId));
+
+      let html: string;
+      if (lesson) {
+        // Render with quiz item IDs
+        html = await renderMarkdownWithQuizItems(
+          db,
+          lesson.id,
+          topicRecord.lessonContent
+        );
+      } else {
+        // Fallback to basic rendering if no lesson record exists
+        html = await marked.parse(topicRecord.lessonContent);
+      }
+
       const lines = html.split("\n");
       const sseMessage =
         lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
@@ -194,7 +216,24 @@ topics.get("/:id/lesson", async (c) => {
 2. Why it matters or when I'd use it
 3. A quick example or analogy to make it concrete
 
-Use markdown formatting (headings, bold, lists, code blocks) to structure it clearly. Keep the total length to 2-3 short paragraphs maximum. Make it conversational and engaging, like you're explaining it to a friend.`,
+Use markdown formatting (headings, bold, lists, code blocks) to structure it clearly. Keep the total length to 2-3 short paragraphs maximum. Make it conversational and engaging, like you're explaining it to a friend.
+
+After the lesson content, include 2-3 multiple choice questions to test understanding. Format them using this exact syntax:
+
+:::mcq
+# Question text here?
+- [ ] Wrong answer
+- [x] Correct answer
+- [ ] Another wrong answer
+- [ ] Yet another wrong answer
+:::
+
+For multi-select questions, mark multiple answers with [x]. You can optionally add explanations after options using > like this:
+
+- [x] Correct answer
+  > This is why this answer is correct
+
+Make the questions practical and directly related to the key concepts you just taught.`,
         },
       ],
     });
@@ -216,10 +255,30 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
               // Save the accumulated markdown to the database
               if (markdownAccumulator.trim()) {
                 try {
+                  // Update topic with lesson content
                   await db
                     .update(schema.topics)
                     .set({ lessonContent: markdownAccumulator })
                     .where(eq(schema.topics.id, topicId));
+
+                  // Create lesson record
+                  const [lesson] = await db
+                    .insert(schema.lessons)
+                    .values({
+                      id: crypto.randomUUID(),
+                      topicId,
+                      type: "initial",
+                      content: markdownAccumulator,
+                      reviewNumber: 0,
+                    })
+                    .returning();
+
+                  // Extract and save quiz items
+                  await extractAndSaveQuizItems(
+                    db,
+                    lesson.id,
+                    markdownAccumulator
+                  );
                 } catch (dbError) {
                   console.error("Error saving lesson content to DB:", dbError);
                 }
@@ -245,10 +304,30 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
                   // Save the accumulated markdown to the database
                   if (markdownAccumulator.trim()) {
                     try {
+                      // Update topic with lesson content
                       await db
                         .update(schema.topics)
                         .set({ lessonContent: markdownAccumulator })
                         .where(eq(schema.topics.id, topicId));
+
+                      // Create lesson record
+                      const [lesson] = await db
+                        .insert(schema.lessons)
+                        .values({
+                          id: crypto.randomUUID(),
+                          topicId,
+                          type: "initial",
+                          content: markdownAccumulator,
+                          reviewNumber: 0,
+                        })
+                        .returning();
+
+                      // Extract and save quiz items
+                      await extractAndSaveQuizItems(
+                        db,
+                        lesson.id,
+                        markdownAccumulator
+                      );
                     } catch (dbError) {
                       console.error(
                         "Error saving lesson content to DB:",
@@ -271,7 +350,7 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
 
                   if (content) {
                     markdownAccumulator += content;
-                    // Parse accumulated markdown to HTML and send the full HTML
+                    // Parse accumulated markdown to HTML
                     const html = await marked.parse(markdownAccumulator);
                     // For SSE format, split multi-line data with each line prefixed by "data: "
                     const lines = html.split("\n");

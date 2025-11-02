@@ -15,6 +15,13 @@
       "when": 1762121228346,
       "tag": "0001_wide_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762125638812,
+      "tag": "0002_chunky_iron_lad",
+      "breakpoints": true
     }
   ]
 }
