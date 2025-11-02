@@ -25,7 +25,7 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
               <form
                 id="topic-form"
                 method="post"
-                onsubmit="event.preventDefault(); const uuid = crypto.randomUUID(); this.action = `/topics/${uuid}`; this.submit();"
+                onsubmit="event.preventDefault(); const uuid = crypto.randomUUID(); this.action = `/topics/${uuid}/learn`; this.submit();"
               >
                 <label for="title">What would you like to learn about?</label>
                 <input

@@ -8,8 +8,8 @@ import { HomePage } from "./pages/HomePage";
 import { SignInPage } from "./pages/SignInPage";
 import { SignUpPage } from "./pages/SignUpPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { ExplanationPage } from "./pages/ExplanationPage";
 import openrouter from "./routes/openrouter";
+import topics from "./routes/topics";
 import { callOpenRouter } from "./lib/openrouter";
 
 type Variables = {
@@ -180,135 +180,8 @@ app.get("/session", (c) => {
   return c.json({ session, user });
 });
 
-app.get("/test-db", async (c) => {
-  try {
-    const db = createDb(c.env.DATABASE_URL);
-
-    // Test connection with a simple query
-    const result = await db.execute("SELECT 1 as test");
-
-    return c.json({ success: true, result: result.rows[0] });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      500
-    );
-  }
-});
-
-// Handle topic page - GET displays existing topic, POST creates or displays topic
-app.get("/topics/:id", async (c) => {
-  const user = c.get("user");
-
-  if (!user) {
-    return c.redirect("/signin?error=not_authenticated");
-  }
-
-  try {
-    const topicId = c.req.param("id");
-
-    // Fetch the topic from database
-    const db = createDb(c.env.DATABASE_URL);
-    const [topic] = await db
-      .select()
-      .from(schema.topics)
-      .where(eq(schema.topics.id, topicId));
-
-    if (!topic) {
-      return c.redirect("/?error=topic_not_found");
-    }
-
-    // Verify the topic belongs to the current user
-    if (topic.userId !== user.id) {
-      return c.redirect("/?error=unauthorized");
-    }
-
-    // Return the page with streaming enabled
-    return c.render(
-      <ExplanationPage
-        user={user}
-        topic={topic.title}
-        topicId={topic.id}
-        explanation=""
-        streaming={true}
-      />
-    );
-  } catch (error) {
-    console.error("Error loading topic:", error);
-    return c.redirect("/?error=topic_load_failed");
-  }
-});
-
-app.post("/topics/:id", async (c) => {
-  const user = c.get("user");
-
-  if (!user) {
-    return c.redirect("/signin?error=not_authenticated");
-  }
-
-  try {
-    const topicId = c.req.param("id");
-    const body = await c.req.parseBody();
-    const title = body.title as string;
-
-    if (!title || !title.trim()) {
-      return c.redirect("/?error=topic_required");
-    }
-
-    const db = createDb(c.env.DATABASE_URL);
-
-    // Try to fetch existing topic
-    const [existingTopic] = await db
-      .select()
-      .from(schema.topics)
-      .where(eq(schema.topics.id, topicId));
-
-    if (existingTopic) {
-      // Topic exists, verify ownership
-      if (existingTopic.userId !== user.id) {
-        return c.redirect("/?error=unauthorized");
-      }
-
-      // Return the page with the existing topic
-      return c.render(
-        <ExplanationPage
-          user={user}
-          topic={existingTopic.title}
-          topicId={existingTopic.id}
-          explanation=""
-          streaming={true}
-        />
-      );
-    }
-
-    // Topic doesn't exist, create it
-    const [newTopic] = await db
-      .insert(schema.topics)
-      .values({
-        id: topicId,
-        userId: user.id,
-        title: title.trim(),
-      })
-      .returning();
-
-    // Return the page with the new topic
-    return c.render(
-      <ExplanationPage
-        user={user}
-        topic={newTopic.title}
-        topicId={newTopic.id}
-        explanation=""
-        streaming={true}
-      />
-    );
-  } catch (error) {
-    console.error("Error creating/loading topic:", error);
-    return c.redirect("/?error=topic_operation_failed");
-  }
-});
+// Mount topic routes
+app.route("/topics", topics);
 
 // SSE endpoint for streaming explanations
 app.get("/stream-explanation", async (c) => {
