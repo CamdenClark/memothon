@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { createDb, schema } from "./db";
+import { eq } from "drizzle-orm";
 import { renderer } from "./renderer";
 import { createAuth } from "./auth";
 import type { Auth } from "./auth";
@@ -198,8 +199,8 @@ app.get("/test-db", async (c) => {
   }
 });
 
-// Generate topic explanation - immediately returns page with loading state
-app.post("/generate-explanation", async (c) => {
+// Handle topic page - GET displays existing topic, POST creates or displays topic
+app.get("/topics/:id", async (c) => {
   const user = c.get("user");
 
   if (!user) {
@@ -207,46 +208,105 @@ app.post("/generate-explanation", async (c) => {
   }
 
   try {
-    const body = await c.req.parseBody();
-    const topic = body.topic as string;
+    const topicId = c.req.param("id");
 
-    if (!topic || !topic.trim()) {
-      return c.render(
-        <ExplanationPage
-          user={user}
-          topic=""
-          explanation=""
-          error="Please provide a topic"
-        />
-      );
+    // Fetch the topic from database
+    const db = createDb(c.env.DATABASE_URL);
+    const [topic] = await db
+      .select()
+      .from(schema.topics)
+      .where(eq(schema.topics.id, topicId));
+
+    if (!topic) {
+      return c.redirect("/?error=topic_not_found");
     }
 
-    // Immediately return the page with the topic - explanation will stream via SSE
+    // Verify the topic belongs to the current user
+    if (topic.userId !== user.id) {
+      return c.redirect("/?error=unauthorized");
+    }
+
+    // Return the page with streaming enabled
     return c.render(
       <ExplanationPage
         user={user}
-        topic={topic}
+        topic={topic.title}
+        topicId={topic.id}
         explanation=""
         streaming={true}
       />
     );
   } catch (error) {
-    console.error("Error generating explanation:", error);
-    const body = await c.req.parseBody();
-    const topic = (body.topic as string) || "";
+    console.error("Error loading topic:", error);
+    return c.redirect("/?error=topic_load_failed");
+  }
+});
 
+app.post("/topics/:id", async (c) => {
+  const user = c.get("user");
+
+  if (!user) {
+    return c.redirect("/signin?error=not_authenticated");
+  }
+
+  try {
+    const topicId = c.req.param("id");
+    const body = await c.req.parseBody();
+    const title = body.title as string;
+
+    if (!title || !title.trim()) {
+      return c.redirect("/?error=topic_required");
+    }
+
+    const db = createDb(c.env.DATABASE_URL);
+
+    // Try to fetch existing topic
+    const [existingTopic] = await db
+      .select()
+      .from(schema.topics)
+      .where(eq(schema.topics.id, topicId));
+
+    if (existingTopic) {
+      // Topic exists, verify ownership
+      if (existingTopic.userId !== user.id) {
+        return c.redirect("/?error=unauthorized");
+      }
+
+      // Return the page with the existing topic
+      return c.render(
+        <ExplanationPage
+          user={user}
+          topic={existingTopic.title}
+          topicId={existingTopic.id}
+          explanation=""
+          streaming={true}
+        />
+      );
+    }
+
+    // Topic doesn't exist, create it
+    const [newTopic] = await db
+      .insert(schema.topics)
+      .values({
+        id: topicId,
+        userId: user.id,
+        title: title.trim(),
+      })
+      .returning();
+
+    // Return the page with the new topic
     return c.render(
       <ExplanationPage
-        user={c.get("user")}
-        topic={topic}
+        user={user}
+        topic={newTopic.title}
+        topicId={newTopic.id}
         explanation=""
-        error={
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred"
-        }
+        streaming={true}
       />
     );
+  } catch (error) {
+    console.error("Error creating/loading topic:", error);
+    return c.redirect("/?error=topic_operation_failed");
   }
 });
 
@@ -258,9 +318,35 @@ app.get("/stream-explanation", async (c) => {
     return c.text("Unauthorized", 401);
   }
 
-  const topic = c.req.query("topic");
+  const topicIdParam = c.req.query("topicId");
+  const topicParam = c.req.query("topic");
 
-  if (!topic || !topic.trim()) {
+  let topic: string;
+
+  if (topicIdParam) {
+    // Fetch topic from database
+    const db = createDb(c.env.DATABASE_URL);
+    const [topicRecord] = await db
+      .select()
+      .from(schema.topics)
+      .where(eq(schema.topics.id, topicIdParam));
+
+    if (!topicRecord) {
+      return c.text("Topic not found", 404);
+    }
+
+    if (topicRecord.userId !== user.id) {
+      return c.text("Unauthorized", 403);
+    }
+
+    topic = topicRecord.title;
+  } else if (topicParam) {
+    topic = topicParam;
+  } else {
+    return c.text("Topic or topicId is required", 400);
+  }
+
+  if (!topic.trim()) {
     return c.text("Topic is required", 400);
   }
 

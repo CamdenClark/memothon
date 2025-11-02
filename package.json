@@ -14,7 +14,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "format": "prettier --write .",
+    "format": "prettier --write --cache .",
     "format:check": "prettier --check ."
   },
   "dependencies": {

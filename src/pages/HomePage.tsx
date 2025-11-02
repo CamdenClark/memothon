@@ -22,16 +22,20 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
                 Enter any topic and get a detailed explanation powered by
                 Claude.
               </p>
-              <form action="/generate-explanation" method="post">
-                <label for="topic">What would you like to learn about?</label>
+              <form
+                id="topic-form"
+                method="post"
+                onsubmit="event.preventDefault(); const uuid = crypto.randomUUID(); this.action = `/topics/${uuid}`; this.submit();"
+              >
+                <label for="title">What would you like to learn about?</label>
                 <input
                   type="text"
-                  id="topic"
-                  name="topic"
+                  id="title"
+                  name="title"
                   required
                   placeholder="e.g., The Byzantine Generals Problem"
                 />
-                <button type="submit">Generate Explanation</button>
+                <button type="submit">Learn Topic</button>
               </form>
             </article>
           ) : (

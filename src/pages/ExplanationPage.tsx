@@ -4,6 +4,7 @@ import { Layout } from "../components/Layout";
 interface ExplanationPageProps {
   user: any;
   topic: string;
+  topicId?: string;
   explanation: string;
   error?: string;
   streaming?: boolean;
@@ -12,6 +13,7 @@ interface ExplanationPageProps {
 export const ExplanationPage: FC<ExplanationPageProps> = ({
   user,
   topic,
+  topicId,
   explanation,
   error,
   streaming = false,
@@ -36,7 +38,11 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
             <div
               id="explanation-content"
               hx-ext="sse"
-              sse-connect={`/stream-explanation?topic=${encodeURIComponent(topic)}`}
+              sse-connect={
+                topicId
+                  ? `/stream-explanation?topicId=${topicId}`
+                  : `/stream-explanation?topic=${encodeURIComponent(topic)}`
+              }
               sse-swap="message"
               sse-close="done"
               hx-swap="innerHTML"
