@@ -233,7 +233,13 @@ app.get("/stream-explanation", async (c) => {
       messages: [
         {
           role: "user",
-          content: `Please provide a detailed explanation of the following topic using markdown formatting. Use headings, bold, italics, lists, code blocks, and other markdown features to make it well-structured and easy to read. Provide approximately 5 paragraphs of content:\n\n${topic}`,
+          content: `Teach me about "${topic}" in a clear, concise lesson. Keep it bite-sized - something I could absorb in a few minutes. Focus on:
+
+1. The core concept explained simply
+2. Why it matters or when I'd use it
+3. A quick example or analogy to make it concrete
+
+Use markdown formatting (headings, bold, lists, code blocks) to structure it clearly. Keep the total length to 2-3 short paragraphs maximum. Make it conversational and engaging, like you're explaining it to a friend.`,
         },
       ],
     });
