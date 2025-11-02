@@ -2,19 +2,8 @@ CREATE TABLE "topics" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"title" text NOT NULL,
-	"mastery_score" real DEFAULT 0,
-	"next_review_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"email" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "account" (
