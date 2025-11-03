@@ -12,28 +12,34 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
         <>
           {user.openrouterApiKey ? (
             <article>
-              <h2>Topic Explainer</h2>
-              <p>
-                Enter any topic and get a detailed explanation powered by
-                Claude.
-              </p>
+              <h2>New topics</h2>
+              <p>Enter a new topic to learn</p>
               <form
                 id="topic-form"
                 method="post"
                 onsubmit="event.preventDefault(); const uuid = crypto.randomUUID(); this.action = `/topics/${uuid}/learn`; this.submit();"
               >
-                <label for="title">What would you like to learn about?</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  required
-                  placeholder="e.g., The Byzantine Generals Problem"
-                />
-                <button type="submit">Learn Topic</button>
+                <fieldset role="group">
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    required
+                    placeholder="e.g., The Byzantine Generals Problem"
+                    aria-label="What would you like to learn about?"
+                  />
+                  <button type="submit">Learn</button>
+                </fieldset>
               </form>
             </article>
-          ) : (
+          ) : null}
+
+          <article>
+            <h2>Review topics</h2>
+            <p>No topics ready for review yet</p>
+          </article>
+
+          {!user.openrouterApiKey && (
             <article style="text-align: center;">
               <h2>Get Started</h2>
               <p>
