@@ -25,6 +25,15 @@ export const SettingsPage: FC<SettingsPageProps> = ({ user }) => {
       <h1>Settings</h1>
 
       <article>
+        <h2>Account</h2>
+        <form method="post" action="/signout">
+          <button type="submit" class="secondary">
+            Sign Out
+          </button>
+        </form>
+      </article>
+
+      <article>
         <h2>OpenRouter Integration</h2>
         {user.openrouterApiKey ? (
           <>

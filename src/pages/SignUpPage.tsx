@@ -3,7 +3,7 @@ import { Layout } from "../components/Layout";
 
 export const SignUpPage: FC = () => {
   return (
-    <Layout title="Sign Up - Memothon">
+    <Layout>
       <article style="max-width: 500px; margin: 0 auto;">
         <hgroup>
           <h1>Create your account</h1>

@@ -10,11 +10,6 @@ export const HomePage: FC<HomePageProps> = ({ user }) => {
     <Layout user={user}>
       {user ? (
         <>
-          <hgroup>
-            <h1>Welcome back, {user.name}!</h1>
-            <p>Your memory palace awaits.</p>
-          </hgroup>
-
           {user.openrouterApiKey ? (
             <article>
               <h2>Topic Explainer</h2>

@@ -1,16 +1,11 @@
 import type { FC } from "hono/jsx";
 
 interface LayoutProps {
-  title?: string;
   user?: any;
   children: any;
 }
 
-export const Layout: FC<LayoutProps> = ({
-  title = "Memothon",
-  user,
-  children,
-}) => {
+export const Layout: FC<LayoutProps> = ({ user, children }) => {
   return (
     <html>
       <body>
@@ -20,41 +15,16 @@ export const Layout: FC<LayoutProps> = ({
               <li>
                 <strong>
                   <a href="/" style="text-decoration: none;">
-                    {title}
+                    Memothon
                   </a>
                 </strong>
               </li>
             </ul>
             <ul>
-              {user && (
-                <>
-                  <li>
-                    <a href="/">Home</a>
-                  </li>
-                  <li>
-                    <a href="/settings">Settings</a>
-                  </li>
-                </>
-              )}
               {user ? (
                 <>
                   <li>
-                    <small>{user.name || user.email}</small>
-                  </li>
-                  <li>
-                    <form
-                      method="post"
-                      action="/signout"
-                      style="display: inline;"
-                    >
-                      <button
-                        type="submit"
-                        class="secondary outline"
-                        style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
-                      >
-                        Sign Out
-                      </button>
-                    </form>
+                    <a href="/settings">Settings</a>
                   </li>
                 </>
               ) : (

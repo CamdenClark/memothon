@@ -3,7 +3,7 @@ import { Layout } from "../components/Layout";
 
 export const SignInPage: FC = () => {
   return (
-    <Layout title="Sign In - Memothon">
+    <Layout>
       <article style="max-width: 500px; margin: 0 auto;">
         <hgroup>
           <h1>Sign in to your account</h1>

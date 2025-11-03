@@ -245,3 +245,164 @@ svg.w-5 {
   color: var(--pico-muted-color);
   font-style: italic;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  /* Navigation adjustments */
+  header.container {
+    padding: 0.5rem 1rem;
+  }
+
+  nav {
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 0 0.75rem 0 !important;
+  }
+
+  nav ul {
+    flex-direction: column;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0.75rem;
+  }
+
+  nav ul li {
+    width: 100%;
+    text-align: center;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  nav ul li small {
+    display: block;
+    padding: 0.25rem;
+  }
+
+  nav ul li form,
+  nav ul li a[role="button"],
+  nav ul li button {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  nav ul li a:not([role="button"]) {
+    display: block;
+    padding: 0.5rem;
+  }
+
+  /* Container padding adjustments */
+  .container {
+    padding: 1rem;
+  }
+
+  /* Article spacing */
+  article {
+    padding: 1rem;
+  }
+
+  /* Heading sizes */
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Button groups */
+  article div a[role="button"] {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+  }
+
+  /* Form inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Table responsiveness */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table tbody {
+    display: block;
+  }
+
+  table tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding-bottom: 0.5rem;
+  }
+
+  table td {
+    display: block;
+    text-align: left;
+    padding: 0.25rem 0;
+  }
+
+  table td:first-child {
+    font-weight: bold;
+    border-bottom: none;
+  }
+
+  table code {
+    word-break: break-all;
+  }
+
+  /* Back button */
+  p a[role="button"] {
+    display: inline-block;
+    width: auto;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Quiz feedback */
+  .quiz-explanation {
+    padding-left: 1rem;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  article {
+    padding: 0.75rem;
+  }
+
+  nav ul li {
+    margin: 0.125rem 0;
+  }
+}
+
+/* Tablet landscape and small desktop */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    max-width: 90%;
+  }
+}

@@ -19,7 +19,7 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
   streaming = false,
 }) => {
   return (
-    <Layout user={user} title={`Explanation: ${topic}`}>
+    <Layout user={user}>
       <p>
         <a href="/" role="button" class="secondary outline">
           ← Back to Home
