@@ -215,3 +215,33 @@ svg.w-5 {
 .inline-flex.items-center svg {
   margin-right: 0.375rem;
 }
+
+/* Quiz feedback styles */
+.quiz-feedback {
+  animation: slideDown 0.3s ease-out;
+}
+
+.quiz-feedback.success {
+  border-left: 4px solid var(--pico-primary-background);
+}
+
+.quiz-feedback.error {
+  border-left: 4px solid var(--pico-del-color);
+}
+
+.quiz-option-correct label {
+  color: var(--pico-primary-background);
+  font-weight: 600;
+}
+
+.quiz-option-incorrect label {
+  color: var(--pico-del-color);
+  text-decoration: line-through;
+}
+
+.quiz-explanation {
+  margin-top: 0.5rem;
+  padding-left: 2rem;
+  color: var(--pico-muted-color);
+  font-style: italic;
+}

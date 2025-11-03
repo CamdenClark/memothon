@@ -20,37 +20,40 @@ const QuizItemComponent: FC<QuizItemProps> = ({ quizItem, quizItemId }) => {
   const isMultiSelect =
     quizItem.options.filter((opt) => opt.isCorrect).length > 1;
   const inputType = isMultiSelect ? "checkbox" : "radio";
+  const formId = `quiz-form-${quizItemId}`;
 
   return (
-    <article
-      class="quiz-item"
-      data-quiz-item-id={quizItemId}
-      data-multi-select={isMultiSelect.toString()}
-    >
+    <article class="quiz-item" data-quiz-item-id={quizItemId}>
       <h3>{quizItem.question}</h3>
-      <fieldset>
-        {quizItem.options.map((opt, idx) => (
-          <>
+      <form
+        id={formId}
+        hx-post={`/topics/quiz/${quizItemId}/check`}
+        hx-swap="outerHTML"
+        hx-target="closest article"
+        hx-include={`#${formId} input:checked`}
+      >
+        <fieldset>
+          {quizItem.options.map((opt, idx) => (
             <label>
               <input
                 type={inputType}
                 name={`quiz-${quizItemId}`}
                 value={idx.toString()}
-                data-correct={opt.isCorrect ? "true" : undefined}
+                onchange={`
+                  const form = document.getElementById('${formId}');
+                  const checkedInputs = form.querySelectorAll('input:checked');
+                  const answers = Array.from(checkedInputs).map(input => input.value);
+                  const answersInput = form.querySelector('input[name="answers"]');
+                  answersInput.value = JSON.stringify(answers);
+                  htmx.trigger(form, 'submit');
+                `}
               />
               {opt.text}
             </label>
-            {opt.explanation && (
-              <small class="quiz-explanation" style="display: none;">
-                {opt.explanation}
-              </small>
-            )}
-          </>
-        ))}
-      </fieldset>
-      <button type="button" class="secondary" onclick="checkAnswer(this)">
-        Check Answer
-      </button>
+          ))}
+        </fieldset>
+        <input type="hidden" name="answers" value="[]" />
+      </form>
     </article>
   );
 };

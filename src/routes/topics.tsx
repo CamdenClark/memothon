@@ -402,4 +402,187 @@ Use markdown formatting (headings, bold, lists, code blocks) to structure it cle
   }
 });
 
+// Endpoint to check quiz answer and return feedback
+topics.post("/quiz/:quizItemId/check", async (c) => {
+  const user = c.get("user");
+
+  if (!user) {
+    return c.text("Unauthorized", 401);
+  }
+
+  const quizItemId = c.req.param("quizItemId");
+  const body = await c.req.parseBody();
+  const selectedAnswers = body.answers
+    ? JSON.parse(body.answers as string)
+    : [];
+
+  // Fetch quiz item from database
+  const db = createDb(c.env.DATABASE_URL);
+  const [quizItem] = await db
+    .select()
+    .from(schema.quizItems)
+    .where(eq(schema.quizItems.id, quizItemId));
+
+  if (!quizItem) {
+    return c.text("Quiz item not found", 404);
+  }
+
+  // Verify ownership via lesson -> topic -> user
+  const [lesson] = await db
+    .select()
+    .from(schema.lessons)
+    .where(eq(schema.lessons.id, quizItem.lessonId));
+
+  if (!lesson) {
+    return c.text("Lesson not found", 404);
+  }
+
+  const [topic] = await db
+    .select()
+    .from(schema.topics)
+    .where(eq(schema.topics.id, lesson.topicId));
+
+  if (!topic || topic.userId !== user.id) {
+    return c.text("Unauthorized", 403);
+  }
+
+  // Check the answer
+  const config = quizItem.config as {
+    options: Array<{ text: string; isCorrect: boolean; explanation?: string }>;
+    isMultiSelect: boolean;
+  };
+
+  const correctIndices = config.options
+    .map((opt, idx) => (opt.isCorrect ? idx : -1))
+    .filter((idx): idx is number => idx !== -1);
+
+  const selectedSet = new Set<number>(
+    selectedAnswers.map((a: string) => parseInt(a))
+  );
+  const correctSet = new Set<number>(correctIndices);
+
+  const isCorrect =
+    selectedSet.size === correctSet.size &&
+    Array.from(selectedSet).every((idx) => correctSet.has(idx));
+
+  // Build feedback HTML
+  const feedbackClass = isCorrect ? "success" : "error";
+  const feedbackMessage = isCorrect
+    ? "Correct! Well done."
+    : "Not quite right. Try again!";
+
+  const feedbackHtml = (
+    <article class={`quiz-feedback ${feedbackClass}`}>
+      <h3>{quizItem.question}</h3>
+      <fieldset disabled>
+        {config.options.map((opt, idx) => {
+          const isSelected = selectedSet.has(idx);
+          const isCorrectOption = opt.isCorrect;
+          const showExplanation = isSelected || isCorrectOption;
+
+          return (
+            <>
+              <label
+                class={
+                  isCorrectOption
+                    ? "quiz-option-correct"
+                    : isSelected
+                      ? "quiz-option-incorrect"
+                      : ""
+                }
+              >
+                <input
+                  type={config.isMultiSelect ? "checkbox" : "radio"}
+                  name={`quiz-${quizItemId}`}
+                  value={idx.toString()}
+                  checked={isSelected}
+                />
+                {opt.text}
+                {isCorrectOption && " ✓"}
+                {isSelected && !isCorrectOption && " ✗"}
+              </label>
+              {showExplanation && opt.explanation && (
+                <small class="quiz-explanation" style="display: block;">
+                  {opt.explanation}
+                </small>
+              )}
+            </>
+          );
+        })}
+      </fieldset>
+      <p>
+        <strong>{feedbackMessage}</strong>
+      </p>
+      {!isCorrect && (
+        <button
+          type="button"
+          class="secondary"
+          hx-get={`/topics/quiz/${quizItemId}/reset`}
+          hx-swap="outerHTML"
+          hx-target="closest article"
+        >
+          Try Again
+        </button>
+      )}
+    </article>
+  );
+
+  return c.html(feedbackHtml);
+});
+
+// Endpoint to reset a quiz item (return to initial state)
+topics.get("/quiz/:quizItemId/reset", async (c) => {
+  const user = c.get("user");
+
+  if (!user) {
+    return c.text("Unauthorized", 401);
+  }
+
+  const quizItemId = c.req.param("quizItemId");
+
+  // Fetch quiz item from database
+  const db = createDb(c.env.DATABASE_URL);
+  const [quizItem] = await db
+    .select()
+    .from(schema.quizItems)
+    .where(eq(schema.quizItems.id, quizItemId));
+
+  if (!quizItem) {
+    return c.text("Quiz item not found", 404);
+  }
+
+  // Verify ownership via lesson -> topic -> user
+  const [lesson] = await db
+    .select()
+    .from(schema.lessons)
+    .where(eq(schema.lessons.id, quizItem.lessonId));
+
+  if (!lesson) {
+    return c.text("Lesson not found", 404);
+  }
+
+  const [topic] = await db
+    .select()
+    .from(schema.topics)
+    .where(eq(schema.topics.id, lesson.topicId));
+
+  if (!topic || topic.userId !== user.id) {
+    return c.text("Unauthorized", 403);
+  }
+
+  // Reconstruct the original quiz item
+  const config = quizItem.config as {
+    options: Array<{ text: string; isCorrect: boolean; explanation?: string }>;
+    isMultiSelect: boolean;
+  };
+
+  const quizItemData = {
+    question: quizItem.question,
+    options: config.options,
+  };
+
+  const html = renderQuizItem(quizItemData, quizItemId);
+  return c.html(html);
+});
+
 export default topics;
