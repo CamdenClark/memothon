@@ -41,7 +41,7 @@ export const ExplanationPage: FC<ExplanationPageProps> = ({
               sse-connect={`/topics/${topicId}/lesson`}
               sse-swap="message"
               sse-close="done"
-              hx-swap="innerHTML"
+              hx-swap="beforeend"
             >
               <p aria-busy="true">Generating explanation...</p>
             </div>

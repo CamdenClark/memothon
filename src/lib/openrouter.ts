@@ -27,6 +27,14 @@ export interface OpenRouterCompletionResponse {
     message: {
       role: string;
       content: string;
+      tool_calls?: Array<{
+        id: string;
+        type: "function";
+        function: {
+          name: string;
+          arguments: string;
+        };
+      }>;
     };
     finish_reason: string;
   }>;

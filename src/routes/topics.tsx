@@ -5,10 +5,8 @@ import type { Auth } from "../auth";
 import { ExplanationPage } from "../pages/ExplanationPage";
 import { callOpenRouterStream } from "../lib/openrouter";
 import { marked } from "marked";
-import {
-  extractAndSaveQuizItems,
-  renderMarkdownWithQuizItems,
-} from "../lib/quiz-items";
+import { streamQuizGeneration } from "../lib/quiz-generator";
+import { renderQuizItem } from "../lib/quiz-renderer";
 
 type Variables = {
   auth: Auth;
@@ -166,25 +164,7 @@ topics.get("/:id/lesson", async (c) => {
   // If lesson content already exists, return it directly
   if (topicRecord.lessonContent) {
     try {
-      // Find the initial lesson for this topic
-      const [lesson] = await db
-        .select()
-        .from(schema.lessons)
-        .where(eq(schema.lessons.topicId, topicId));
-
-      let html: string;
-      if (lesson) {
-        // Render with quiz item IDs
-        html = await renderMarkdownWithQuizItems(
-          db,
-          lesson.id,
-          topicRecord.lessonContent
-        );
-      } else {
-        // Fallback to basic rendering if no lesson record exists
-        html = await marked.parse(topicRecord.lessonContent);
-      }
-
+      const html = await marked.parse(topicRecord.lessonContent);
       const lines = html.split("\n");
       const sseMessage =
         lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
@@ -216,24 +196,7 @@ topics.get("/:id/lesson", async (c) => {
 2. Why it matters or when I'd use it
 3. A quick example or analogy to make it concrete
 
-Use markdown formatting (headings, bold, lists, code blocks) to structure it clearly. Keep the total length to 2-3 short paragraphs maximum. Make it conversational and engaging, like you're explaining it to a friend.
-
-After the lesson content, include 2-3 multiple choice questions to test understanding. Format them using this exact syntax:
-
-:::mcq
-# Question text here?
-- [ ] Wrong answer
-- [x] Correct answer
-- [ ] Another wrong answer
-- [ ] Yet another wrong answer
-:::
-
-For multi-select questions, mark multiple answers with [x]. You can optionally add explanations after options using > like this:
-
-- [x] Correct answer
-  > This is why this answer is correct
-
-Make the questions practical and directly related to the key concepts you just taught.`,
+Use markdown formatting (headings, bold, lists, code blocks) to structure it clearly. Keep the total length to 2-3 short paragraphs maximum. Make it conversational and engaging, like you're explaining it to a friend.`,
         },
       ],
     });
@@ -247,11 +210,21 @@ Make the questions practical and directly related to the key concepts you just t
         try {
           let buffer = "";
           let markdownAccumulator = "";
+          let paragraphBuffer = "";
 
           while (true) {
             const { done, value } = await reader.read();
 
             if (done) {
+              // Render any remaining buffered markdown
+              if (paragraphBuffer.trim()) {
+                const html = await marked.parse(paragraphBuffer);
+                const lines = html.split("\n");
+                const sseMessage =
+                  lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
+                controller.enqueue(new TextEncoder().encode(sseMessage));
+              }
+
               // Save the accumulated markdown to the database
               if (markdownAccumulator.trim()) {
                 try {
@@ -273,12 +246,19 @@ Make the questions practical and directly related to the key concepts you just t
                     })
                     .returning();
 
-                  // Extract and save quiz items
-                  await extractAndSaveQuizItems(
-                    db,
+                  // Stream quiz items as HTML via tool calling
+                  for await (const quizItem of streamQuizGeneration(
+                    user,
                     lesson.id,
-                    markdownAccumulator
-                  );
+                    markdownAccumulator,
+                    db
+                  )) {
+                    const html = renderQuizItem(quizItem, quizItem.id);
+                    const lines = html.split("\n");
+                    const sseMessage =
+                      lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
+                    controller.enqueue(new TextEncoder().encode(sseMessage));
+                  }
                 } catch (dbError) {
                   console.error("Error saving lesson content to DB:", dbError);
                 }
@@ -301,6 +281,15 @@ Make the questions practical and directly related to the key concepts you just t
                 const data = line.slice(6);
 
                 if (data === "[DONE]") {
+                  // Render any remaining buffered markdown
+                  if (paragraphBuffer.trim()) {
+                    const html = await marked.parse(paragraphBuffer);
+                    const lines = html.split("\n");
+                    const sseMessage =
+                      lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
+                    controller.enqueue(new TextEncoder().encode(sseMessage));
+                  }
+
                   // Save the accumulated markdown to the database
                   if (markdownAccumulator.trim()) {
                     try {
@@ -322,12 +311,22 @@ Make the questions practical and directly related to the key concepts you just t
                         })
                         .returning();
 
-                      // Extract and save quiz items
-                      await extractAndSaveQuizItems(
-                        db,
+                      // Stream quiz items as HTML via tool calling
+                      for await (const quizItem of streamQuizGeneration(
+                        user,
                         lesson.id,
-                        markdownAccumulator
-                      );
+                        markdownAccumulator,
+                        db
+                      )) {
+                        const html = renderQuizItem(quizItem, quizItem.id);
+                        const lines = html.split("\n");
+                        const sseMessage =
+                          lines.map((line) => `data: ${line}`).join("\n") +
+                          "\n\n";
+                        controller.enqueue(
+                          new TextEncoder().encode(sseMessage)
+                        );
+                      }
                     } catch (dbError) {
                       console.error(
                         "Error saving lesson content to DB:",
@@ -350,13 +349,28 @@ Make the questions practical and directly related to the key concepts you just t
 
                   if (content) {
                     markdownAccumulator += content;
-                    // Parse accumulated markdown to HTML
-                    const html = await marked.parse(markdownAccumulator);
-                    // For SSE format, split multi-line data with each line prefixed by "data: "
-                    const lines = html.split("\n");
-                    const sseMessage =
-                      lines.map((line) => `data: ${line}`).join("\n") + "\n\n";
-                    controller.enqueue(new TextEncoder().encode(sseMessage));
+                    paragraphBuffer += content;
+
+                    // Check for paragraph breaks and render complete paragraphs
+                    if (paragraphBuffer.includes("\n\n")) {
+                      const blocks = paragraphBuffer.split("\n\n");
+                      // Keep the last incomplete block in buffer
+                      paragraphBuffer = blocks.pop() || "";
+
+                      // Render and send complete blocks
+                      for (const block of blocks) {
+                        if (block.trim()) {
+                          const html = await marked.parse(block);
+                          const lines = html.split("\n");
+                          const sseMessage =
+                            lines.map((line) => `data: ${line}`).join("\n") +
+                            "\n\n";
+                          controller.enqueue(
+                            new TextEncoder().encode(sseMessage)
+                          );
+                        }
+                      }
+                    }
                   }
                 } catch (e) {
                   // Skip malformed JSON
